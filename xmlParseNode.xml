@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tool>
+	<toolName>STS</toolName> 
+	<diagram>
+		<diagramName>myDiagram</diagramName>
+		<editable>true</editable>
+		<moveObject>true</moveObject>
+	</diagram>
+	<palette>
+		<paletteName>myPalette</paletteName>
+		<paletteContentGroup>
+			<paletteGroupName>STS Nodes</paletteGroupName>
+			<paletteGroupNode>
+				<paletteGroupNodeName>Agent</paletteGroupNodeName>
+				<paletteGroupNodeColor>Green</paletteGroupNodeColor>
+				<paletteGroupNodeShape>Rectangular</paletteGroupNodeShape>
+			</paletteGroupNode>
+			<paletteGroupNode>
+				<paletteGroupNodeName>Role</paletteGroupNodeName>
+				<paletteGroupNodeColor>Green</paletteGroupNodeColor>
+				<paletteGroupNodeShape>Circle</paletteGroupNodeShape>
+			</paletteGroupNode>
+			<paletteGroupNode>
+				<paletteGroupNodeName>Goal</paletteGroupNodeName>
+				<paletteGroupNodeColor>Green</paletteGroupNodeColor>
+				<paletteGroupNodeShape>Rectangular</paletteGroupNodeShape>
+			</paletteGroupNode>
+		</paletteContentGroup>
+		<paletteContentGroup>
+			<paletteGroupName>STS links</paletteGroupName>
+			<paletteGroupNode>
+				<paletteGroupNodeName>Play</paletteGroupNodeName>
+				<paletteGroupNodeColor>Green</paletteGroupNodeColor>
+				<paletteGroupNodeShape>Circle</paletteGroupNodeShape>
+			</paletteGroupNode>
+			<paletteGroupNode>
+				<paletteGroupNodeName>Delegation</paletteGroupNodeName>
+				<paletteGroupNodeColor>Green</paletteGroupNodeColor>
+				<paletteGroupNodeShape>Rectangular</paletteGroupNodeShape>
+			</paletteGroupNode>
+			<paletteGroupNode>
+				<paletteGroupNodeName>Transmission</paletteGroupNodeName>
+				<paletteGroupNodeColor>Green</paletteGroupNodeColor>
+				<paletteGroupNodeShape>Circle</paletteGroupNodeShape>
+			</paletteGroupNode>
+		</paletteContentGroup>
+	</palette>
+</tool>

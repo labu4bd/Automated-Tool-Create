@@ -1,0 +1,721 @@
+<html>
+<head>
+	<style>
+		#panelShowTable
+		{float:left; width:700px; height:600px; margin:10px;padding:10px;border:1px solid #aaaaaa;}
+		#panelHiddenTable
+		{float:left; width:600px; height:600px; margin:10px;padding:10px;border:1px solid #aaaaaa;}
+		#panelDataShow
+		{display:inline-block;}
+		#button4Checking
+		{float:right;}
+		#button4Create
+		{float:right;}
+	</style>
+</head>
+<body>
+<div id="panel">
+	<div id="panelShowTable">
+		<div id="panelShowTableHader">
+			<h3>Parse XML and Create code for a Tool:</h3>
+		</div>
+		<div id="panelShowTableTextarea">
+			<textarea id="inputXMLToSaveJS" style="width:700px;height:500px" placeholder="Please write your XML document or load with button 'choose file' bellow"></textarea>
+		</div>
+		<div id="panelShowTableFile"  >
+			<b>Select your XML File to Load:</b>
+			<input id="fileToLoad" type="file" onchange="loadFileAsText(); "   autofocus>
+			<button id="button4Checking" onclick="loadXMLCheck();">Check Selected XML File</button>
+		</div>
+		<div>
+			<b>Parse this XML and create code for tool:</b>
+			<input id="inputFileNameToSaveAs" type="hidden" value="code.html"></input>
+			<button id="button4Create" onclick="createSaveTheCode()">Create and Save The Code</button>
+		</div>
+	</div>
+	<div id="panelHiddenTable" style="display:none">
+		<div id="typeDropDown">
+			<b>Select the type of your shape</b>
+			<select  id="selectedShape">
+  				<option value="rectangle" selected="selected">Rectangle</option>
+				<option value="circle">Circle</option> 
+			</select>
+		</div><br/>
+		<div id="color">
+			<b>Give the color of your Shape</b>
+			<input id="inputColor" type="text">
+		</div><br/>
+		<div id="textArea">
+			<textarea id="userGivenShapeCode" style="width:500px;height:200px" placeholder="Plesae write your Shape's JS code"></textarea>
+		</div>
+	</div>
+
+ 
+	<div id="panelDataShow" style="display:none">
+		<b>Tool Name:</b> <span id="tool"></span><br>
+		<b>Diagram Name:</b> <span id="diagram"></span><br>
+		<b>Diagram Number:</b> <span id="diagramNumber"></span><br>
+		<b>Palette Name:</b> <span id="palette"></span><br>
+		<b>Palette Group Number:</b> <span id="paletteGroupNumber"></span>
+	</div>
+</div>
+<script type='text/javascript'>
+ window.onload = function() {
+    document.getElementById('panelHiddenTable').style.display = 'none';
+}
+function createSaveTheCode()
+{
+	
+
+	///////////////////////////////////////////
+	/*
+	var xmlhttp=new XMLHttpRequest();
+	xmlhttp.open("GET",textFileAsBlob,false);
+	xmlhttp.setRequestHeader("Content-Type", "text/xml");
+	xmlhttp.send(null);
+	xmlDoc=xmlhttp.responseXML;
+	*/
+	 var mainHTLMFile = createMainHTLMFile();
+	//var textToWrite = document.getElementById("inputXMLToSaveJS").value;
+	// inside this variable I write all classes only with "writeCodeInVar" this function
+	//var textToWrite = writeCodeInVar();
+	var textFileAsBlob = new Blob([mainHTLMFile], {type:'text/plain'});
+	var fileNameToSaveAs = document.getElementById("inputFileNameToSaveAs").value;
+	var downloadLink = document.createElement("a");
+	
+	downloadLink.download = fileNameToSaveAs;
+	downloadLink.innerHTML = "Download File";
+	if (window.webkitURL != null)
+	{
+		// Chrome allows the link to be clicked
+		// without actually adding it to the DOM.
+		downloadLink.href = window.webkitURL.createObjectURL(textFileAsBlob);
+		//downloadLink.setAttribute("href","testCode.html");
+	}
+	else
+	{
+		// Firefox requires the link to be added to the DOM
+		// before it can be clicked.
+		downloadLink.href = window.URL.createObjectURL(textFileAsBlob);
+		downloadLink.onclick = destroyClickedElement;
+		downloadLink.style.display = "none";
+		document.body.appendChild(downloadLink);
+	}
+
+	downloadLink.click();
+	
+}
+function createMainHTLMFile(){
+
+	// call "loadXMLCheck" function for checking the XML file
+	var mainHTLMFile, forDivStyle="\n", forPaletteCalling="\n";
+	/*
+	if(document.getElementById('panelHiddenTable').style.display == 'none'){
+		//loadXMLCheck();
+		//alert("now it's hidden: ");
+		//means it doesn't check or check but not fine a error and user don't want to put code 
+	}else{
+		alert("Now it's not hidden: ");
+		//means user want to put code so collect the code
+	}
+	*/
+	////////////////////////////////////////////
+	//for create others code
+	var textToWrite = document.getElementById("inputXMLToSaveJS").value;
+	var parser=new DOMParser();
+	var xmlDoc=parser.parseFromString(textToWrite,"text/xml");
+	var group = xmlDoc.getElementsByTagName("paletteContentGroup");
+	var i,tempI, tempJ = 0;
+	
+	mainHTLMFile = mainHTLMFileTemp();
+		
+	
+	for(i=0; i<group.length; i++)
+	{
+		tempI = i+1;
+		forDivStyle +=	"<h3>"+group[i].getElementsByTagName("paletteGroupName")[0].childNodes[0].nodeValue +" </h3>\n";	
+		var node = group[i].getElementsByTagName("paletteGroupNode");
+		var j;
+		for(j=0; j<node.length; j++){
+			tempJ++;
+			var paletteNodeId = "paletteNode"+tempJ;
+			var paletteCanvasId = "\"paletteCanvas"+tempJ+"\"";
+			forDivStyle += "<div id=\""+paletteNodeId+"\"  class=\"";
+			forPaletteCalling += "var p"+tempJ+" = new CanvasStatePalette(document.getElementById("+paletteCanvasId+")); \n";
+			
+			if(!node[j].getElementsByTagName("paletteGroupNodeShape")[0]){
+				if(document.getElementById('panelHiddenTable').style.display != 'none'){
+					//here take the drop down selection item(rectangular or circle) and put "forDivStyle" and "forPaletteCalling" variable like bellow if-then-else
+					forDivStyle += "rectangle\"  draggable = \"true\"  ondragstart=\"drag(event)\">  \n";
+					forPaletteCalling += "p"+tempJ+".addShapePalette(new ShapePalette(p"+tempJ+", 0, 0, 40, 40, 'rgba(0,255,0,0.6)', 'rectangle')); \n";
+				
+				}
+				else{
+					var theAnswer = confirm("You did not give palette node Shape information in group number :  "+ tempI + " node number : "+tempJ+"\n If you want to put your own Shape design, please click 'ok' then give your JS code and information");  //(didn't get it)
+					if(theAnswer){
+						document.getElementById('panelHiddenTable').style.display = 'block';
+						//here take the drop down selection item(rectangular or circle) and put "forDivStyle" and "forPaletteCalling" variable like bellow if-then-else
+						forDivStyle += "rectangle\"  draggable = \"true\"  ondragstart=\"drag(event)\">  \n";
+						forPaletteCalling += "p"+tempJ+".addShapePalette(new ShapePalette(p"+tempJ+", 0, 0, 40, 40, 'rgba(0,255,0,0.6)', 'rectangle')); \n";
+				
+					}
+				}
+			}
+			else{
+				if(node[j].getElementsByTagName("paletteGroupNodeShape")[0].childNodes[0].nodeValue == "Rectangular"){
+					forDivStyle += "rectangle\"  draggable = \"true\"  ondragstart=\"drag(event)\">  \n";
+					forPaletteCalling += "p"+tempJ+".addShapePalette(new ShapePalette(p"+tempJ+", 0, 0, 40, 40, 'rgba(0,255,0,0.6)', 'rectangle')); \n";
+			
+				}else if(node[j].getElementsByTagName("paletteGroupNodeShape")[0].childNodes[0].nodeValue == "Circle"){
+					forDivStyle += "circle\"  draggable = \"true\"  ondragstart=\"drag(event)\">  \n";
+					forPaletteCalling += "p"+tempJ+".addShapePalette(new ShapePalette(p"+tempJ+", 20, 20, 40, 40, 'rgba(0,255,0,0.6)', 'circle')); \n";
+				}
+			}
+			forDivStyle += "<canvas id="+paletteCanvasId+" width=\"50\" height=\"50\" > \n";
+			forDivStyle += " This text is displayed if your browser does not support HTML5 Canvas. \n </canvas> \n </div> \n";
+			forDivStyle += "<style> \n #"+paletteNodeId+" \n {width:50px; height:50px; margin:1px; padding:1px; border:2px ; } \n </style> \n";
+		}
+		forDivStyle += "<hr>";
+		//alert("You gave palette group node information in group: (got it) "+i );
+	
+	}
+	
+	mainHTLMFile += forDivStyle;
+	mainHTLMFile += "\n </div> \n";
+	mainHTLMFile += " <script type=\"text/javascript\"> \n";
+	mainHTLMFile += writeCodeInVar();
+	mainHTLMFile += "function init() { \n";
+	mainHTLMFile += "\"use strict\"; \n";
+	mainHTLMFile += "var s = new CanvasState(document.getElementById('canvas1')); \n";
+	mainHTLMFile += forPaletteCalling;
+  	mainHTLMFile += "} \n";
+  	mainHTLMFile += "</script";
+  	mainHTLMFile += "> \n";
+  	mainHTLMFile += "</body> \n";
+  	mainHTLMFile += "</html>";
+  	 
+  	return mainHTLMFile;
+}
+function loadXMLCheck(){
+	var textToWrite = document.getElementById("inputXMLToSaveJS").value;
+	var parser=new DOMParser();
+	var xmlDoc=parser.parseFromString(textToWrite,"text/xml");
+	
+	
+	//for hidden fild
+	//document.getElementById('panelHiddenTable').style.display = 'block';
+	//for the drop down
+	/*
+		var e = document.getElementById("selectedShape");
+		var strval = e.options[e.selectedIndex].value;//will be rectangle
+	*/
+	//var i, groupLength = xmlDoc.getElementsByTagName("paletteContentGroup").length;
+	//var groupNodeLength = xmlDoc.getElementsByTagName("paletteGroupNode").length;
+	/*
+	
+	
+	// here for show some information
+	document.getElementById("tool").innerHTML=
+	xmlDoc.getElementsByTagName("toolName")[0].childNodes[0].nodeValue;
+	document.getElementById("diagram").innerHTML=
+	xmlDoc.getElementsByTagName("diagramName")[0].childNodes[0].nodeValue;
+	document.getElementById("diagramNumber").innerHTML=
+	xmlDoc.getElementsByTagName("diagram").length;
+	document.getElementById("palette").innerHTML=
+	xmlDoc.getElementsByTagName("paletteName")[0].childNodes[0].nodeValue;
+	document.getElementById("paletteGroupNumber").innerHTML=
+	xmlDoc.getElementsByTagName("paletteContentGroup").length;
+	
+	// here for checking
+	//var tool = xmlDoc.getElementsByTagName("tool");
+	if(xmlDoc.getElementsByTagName("diagram")[0]){	
+	}else{
+		alert("You did not give Diagram Information. A tool cannot be build without a diagram "); 
+	}
+	*/
+	if(!xmlDoc.getElementsByTagName("palette")[0]){
+		alert("You did not give Diagram and Palette Information. A tool cannot be build without a Diagram and palette ");
+	}else if(xmlDoc.getElementsByTagName("paletteContentGroup")[0]){
+		var group = xmlDoc.getElementsByTagName("paletteContentGroup");
+		var i,tempI;
+		for(i=0; i<group.length; i++){
+			tempI = i+1;
+			//document.getElementById("diagram").innerHTML=xmlDoc.getElementsByTagName("paletteContentGroup")[i].childNodes[0].childNodes[0].nodeValue;
+			if(!group[i].getElementsByTagName("paletteGroupNode")[0]){
+				alert("You did not give any group node information in group number : (didn't get it) "+ tempI);
+			}else{
+				//alert("Your group name is :"+group[0].getElementsByTagName("paletteGroupName")[0].childNodes[0].nodeValue);
+				var node = group[i].getElementsByTagName("paletteGroupNode");
+				var j,tempJ;
+				for(j=0; j<node.length; j++){
+					tempJ = j+1;
+					if(!node[j].getElementsByTagName("paletteGroupNodeShape")[0]){
+						var theAnswer = confirm("You did not give palette node Shape information in group number :  "+ tempI + " node number : "+tempJ+"\n If you want to put your own Shape design, please click 'ok' then give your JS code and information");  //(didn't get it)
+						if(theAnswer){
+							document.getElementById('panelHiddenTable').style.display = 'block';
+						}
+					}else{
+						alert("Thank you, You are in group number : "+ tempI+ "and node number :"+tempJ); // (got it)
+					}
+				}
+				//alert("You gave palette group node information in group: (got it) "+i );
+			}
+		}
+	} 
+	
+	/*
+	if(!xmlDoc.getElementsByTagName("paletteContentGroup")[0]){
+		alert("You did not give palette content group Information. You have to give at list one group in your palette.");
+	}else if(!xmlDoc.getElementsByTagName("paletteGroupNode")[0]){
+		alert("You did not give palette node Information in the palette content group . You have to give at list one palette node in your palette group.");
+	}//else if(!xmlDoc.getElementsByTagName("paletteGroupNodeShape")[0]){
+		//alert("You did not give palette node Information in the palette content group . You have to give at list one palette node in your palette group.");
+	//}
+	document.getElementById("tool").innerHTML=xmlDoc.getElementsByTagName("paletteContentGroup").length;
+	//paletteGroupNodeShape
+	*/
+	
+	
+}
+function destroyClickedElement(event)
+{
+	document.body.removeChild(event.target);
+}
+
+function loadFileAsText()
+{
+	var fileToLoad = document.getElementById("fileToLoad").files[0];
+	//var fileToLoad = "/Users/labu4bd/Desktop/JSTesting/xmlParser/demo/xmlNode.xml";
+	var fileReader = new FileReader();
+	fileReader.onload = function(fileLoadedEvent) 
+	{
+		var textFromFileLoaded = fileLoadedEvent.target.result;
+		document.getElementById("inputXMLToSaveJS").value = textFromFileLoaded;
+	};
+	fileReader.readAsText(fileToLoad, "UTF-8");
+	
+	showData();
+ 
+}
+
+function showData(){
+
+	var textToWrite = document.getElementById("inputXMLToSaveJS").value;
+	var parser=new DOMParser();
+	var xmlDoc=parser.parseFromString(textToWrite,"text/xml");
+	
+	document.getElementById("tool").innerHTML = xmlDoc.getElementsByTagName("toolName")[0].childNodes[0].nodeValue;
+	document.getElementById("diagram").innerHTML = xmlDoc.getElementsByTagName("diagramName")[0].childNodes[0].nodeValue;
+	document.getElementById("diagramNumber").innerHTML = xmlDoc.getElementsByTagName("diagram").length;
+	document.getElementById("palette").innerHTML = xmlDoc.getElementsByTagName("paletteName")[0].childNodes[0].nodeValue;
+	document.getElementById("paletteGroupNumber").innerHTML = xmlDoc.getElementsByTagName("paletteContentGroup").length;
+}
+function mainHTLMFileTemp(){
+	var mainHTLMFile = "<!DOCTYPE html> \n";
+ 	mainHTLMFile += " <html> \n";
+ 	mainHTLMFile += " <head> \n";
+ 	mainHTLMFile += "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" /> \n";
+  	mainHTLMFile += " <title>Generated Tool</title> \n";
+  	mainHTLMFile += " <style> \n";
+  	mainHTLMFile += " #palette \n";
+  	mainHTLMFile += " {float:left; width:200px; height:600px;   border:1px solid #aaaaaa;} \n";
+  	mainHTLMFile += " #container \n";
+  	mainHTLMFile += " {float:left; width:800px; height:600px; border:1px solid #aaaaaa;} \n";
+  	mainHTLMFile += " </style> \n";
+  	mainHTLMFile += " <script type=\"text/javascript\"> \n";
+    mainHTLMFile += " function allowDrop(ev) { 	\n";
+  	mainHTLMFile += " ev.preventDefault(); \n";
+  	mainHTLMFile += " } \n";
+  	mainHTLMFile += " function drag(ev) { \n";
+  	mainHTLMFile += " ev.dataTransfer.setData(\"type\", ev.target.className); \n";
+  	mainHTLMFile += " } \n";
+  	mainHTLMFile += " </";
+  	mainHTLMFile += "script> \n";
+    mainHTLMFile += " </head> \n";
+  	mainHTLMFile += " <body onload=\"init()\"> \n";
+  	mainHTLMFile += " <div id=\"container\"> \n";
+  	mainHTLMFile += " <canvas id=\"canvas1\" width=\"800\" height=\"600\"   ondragover=\"allowDrop(event)\"> \n";
+  	mainHTLMFile += " This text is displayed if your browser does not support HTML5 Canvas. \n";
+  	mainHTLMFile += " </canvas> \n";
+  	mainHTLMFile += " </div> \n";
+    mainHTLMFile += " <div id=\"palette\" > \n";
+	
+	return mainHTLMFile;
+}
+function writeCodeInVar(){
+
+var shape = "// by Md Nur Alam Labu \n \n   ";
+	shape += "function Shape(state, x, y, w, h, fill, type) { \n";
+	shape += "\"use strict\"; \n";
+	shape += " this.state = state; \n";
+	shape += " this.x =x || 0; \n ";
+	shape += " this.y=y || 0; \n ";
+	shape += " this.w = w || 1; \n ";
+	shape += " this.h = h || 1; \n";
+	shape += " this.fill = fill || '#AAAAAA'; \n";
+	shape += " this.type = type || 'rectangle'; \n}";
+	
+var shapeDraw = "// Draws this shape to a given context \n  \n";
+	shapeDraw += " Shape.prototype.draw = function(ctx, optionalColor) { \n";
+	shapeDraw += " \"use strict\"; \n";
+	shapeDraw += " var i, cur, half; \n";
+	shapeDraw += "if(this.type == 'rectangle'){ \n";
+	shapeDraw += " ctx.fillStyle = this.fill; \n";
+	shapeDraw += " ctx.fillRect(this.x, this.y, this.w, this.h); \n";
+	shapeDraw += " if (this.state.selection === this) { \n";
+	shapeDraw += " ctx.strokeStyle = this.state.selectionColor; \n";
+	shapeDraw += " ctx.lineWidth = this.state.selectionWidth;\n";
+	shapeDraw += " ctx.strokeRect(this.x,this.y,this.w,this.h); \n";
+	shapeDraw += " half = this.state.selectionBoxSize / 2; \n";
+	shapeDraw += " this.state.selectionHandles[0].x = this.x-half; \n";
+	shapeDraw += " this.state.selectionHandles[0].y = this.y-half; \n";
+	shapeDraw += " this.state.selectionHandles[1].x = this.x+this.w/2-half;\n";
+	shapeDraw += " this.state.selectionHandles[1].y = this.y-half; \n";
+	shapeDraw += " this.state.selectionHandles[2].x = this.x+this.w-half; \n";
+	shapeDraw += " this.state.selectionHandles[2].y = this.y-half; \n";
+	shapeDraw += " this.state.selectionHandles[3].x = this.x-half; \n";
+	shapeDraw += " this.state.selectionHandles[3].y = this.y+this.h/2-half; \n";
+	shapeDraw += " this.state.selectionHandles[4].x = this.x+this.w-half; \n";
+	shapeDraw += " this.state.selectionHandles[4].y = this.y+this.h/2-half; \n";
+	shapeDraw += " this.state.selectionHandles[6].x = this.x+this.w/2-half; \n";
+	shapeDraw += " this.state.selectionHandles[6].y = this.y+this.h-half; \n";
+	shapeDraw += " this.state.selectionHandles[5].x = this.x-half; \n";
+	shapeDraw += " this.state.selectionHandles[5].y = this.y+this.h-half; \n";
+	shapeDraw += " this.state.selectionHandles[7].x = this.x+this.w-half; \n";
+	shapeDraw += " this.state.selectionHandles[7].y = this.y+this.h-half; \n";
+	shapeDraw += " ctx.fillStyle = this.state.selectionBoxColor; \n";
+	shapeDraw += " for (i = 0; i < 8; i += 1) { \n";
+	shapeDraw += " cur = this.state.selectionHandles[i]; \n";
+	shapeDraw += " ctx.fillRect(cur.x, cur.y, this.state.selectionBoxSize, this.state.selectionBoxSize); \n } \n } \n} \n";
+	shapeDraw += " else if(this.type == 'circle') \n { \n";
+	shapeDraw += " ctx.beginPath(); \n";
+	shapeDraw += " ctx.arc(this.x, this.y, this.w/2, 0, 2 * Math.PI, false); \n";
+	shapeDraw += " ctx.fillStyle = this.fill; \n";
+	shapeDraw += " ctx.fill(); \n";
+	shapeDraw += " if (this.state.selection === this) { \n";
+	shapeDraw += " ctx.strokeStyle = this.state.selectionColor; \n";
+	shapeDraw += " ctx.lineWidth = this.state.selectionWidth; \n";
+	shapeDraw += " ctx.strokeRect(this.x - this.w/2,this.y- this.w/2,this.w,this.h); \n";
+	shapeDraw += " half = this.state.selectionBoxSize / 2; \n";
+	shapeDraw += " this.state.selectionHandles[0].x = this.x - this.w/2; \n";
+	shapeDraw += " this.state.selectionHandles[0].y = this.y - this.w/2; \n";
+	shapeDraw += " this.state.selectionHandles[1].x = this.x ;\n";
+	shapeDraw += " this.state.selectionHandles[1].y = this.y - this.w/2; \n";
+	shapeDraw += " this.state.selectionHandles[2].x = this.x+ this.w/2; \n";
+	shapeDraw += " this.state.selectionHandles[2].y = this.y- this.w/2; \n";
+	shapeDraw += " this.state.selectionHandles[3].x = this.x- this.w/2; \n";
+	shapeDraw += " this.state.selectionHandles[3].y = this.y; \n";
+	shapeDraw += " this.state.selectionHandles[4].x = this.x+ this.w/2; \n";
+	shapeDraw += " this.state.selectionHandles[4].y = this.y; \n";
+	shapeDraw += " this.state.selectionHandles[5].x = this.x- this.w/2; \n";
+	shapeDraw += " this.state.selectionHandles[5].y = this.y+ this.w/2; \n";
+	shapeDraw += " this.state.selectionHandles[6].x = this.x ; \n";
+	shapeDraw += " this.state.selectionHandles[6].y = this.y+ this.w/2; \n";
+	shapeDraw += " this.state.selectionHandles[7].x = this.x+ this.w/2; \n";
+	shapeDraw += " this.state.selectionHandles[7].y = this.y+ this.w/2; \n";
+	shapeDraw += " ctx.fillStyle = this.state.selectionBoxColor; \n";
+	shapeDraw += " for (i = 0; i < 8; i += 1) { \n";
+	shapeDraw += " cur = this.state.selectionHandles[i]; \n";
+	shapeDraw += " ctx.fillRect(cur.x, cur.y, this.state.selectionBoxSize, this.state.selectionBoxSize); } \n";
+	shapeDraw += " } \n }\n }; \n \n";
+	
+	var shapeDrawContains = " Shape.prototype.contains = function(mx, my) { \n";
+	shapeDrawContains += " \"use strict\"; \n";
+	shapeDrawContains += " return  (this.x - this.w/2 <= mx) && (this.x + this.w >= mx) && (this.y - this.w/2 <= my) && (this.y + this.h >= my); \n";
+	shapeDrawContains += " }; \n \n";
+ 	
+ 	var canvasState = " function CanvasState(canvas) { \n";
+ 	canvasState += " \"use strict\"; \n";
+ 	canvasState += " this.canvas = canvas; \n";
+ 	canvasState += " this.width = canvas.width; \n";
+ 	canvasState += " this.height = canvas.height; \n";
+ 	canvasState += " this.ctx = canvas.getContext('2d'); \n";
+ 	canvasState += " var stylePaddingLeft, stylePaddingTop, styleBorderLeft, styleBorderTop, html, myState, i; \n";
+ 	canvasState += " if (document.defaultView && document.defaultView.getComputedStyle) { \n";
+ 	canvasState += " this.stylePaddingLeft = parseInt(document.defaultView.getComputedStyle(canvas, null).paddingLeft, 10)      || 0; \n";
+ 	canvasState += " this.stylePaddingTop  = parseInt(document.defaultView.getComputedStyle(canvas, null).paddingTop, 10)       || 0; \n";
+ 	canvasState += " this.styleBorderLeft  = parseInt(document.defaultView.getComputedStyle(canvas, null).borderLeftWidth, 10)  || 0; \n";
+ 	canvasState += " this.styleBorderTop   = parseInt(document.defaultView.getComputedStyle(canvas, null).borderTopWidth, 10)   || 0; \n";
+ 	canvasState += " } \n";
+ 	canvasState += " html = document.body.parentNode; \n";
+ 	canvasState += " this.htmlTop = html.offsetTop; \n";
+ 	canvasState += " this.htmlLeft = html.offsetLeft; \n";
+ 	canvasState += " this.valid = false; \n";
+ 	canvasState += " this.shapes = []; \n";
+ 	canvasState += " this.dragging = false; \n";
+ 	canvasState += " this.resizeDragging = false; \n";
+ 	canvasState += " this.expectResize = -1; \n";
+ 	canvasState += " this.selection = null; \n";
+ 	canvasState += " this.dragoffx = 0; \n";
+ 	canvasState += " this.dragoffy = 0; \n";
+ 	canvasState += " this.selectionHandles = []; \n";
+ 	canvasState += " for (i = 0; i < 8; i += 1) { \n";
+ 	canvasState += " this.selectionHandles.push(new Shape(this)); \n } \n";
+ 	canvasState += " myState = this; \n";
+ 	canvasState += " canvas.addEventListener('selectstart', function(e) { e.preventDefault(); return false; }, false); \n";
+ 	canvasState += " canvas.addEventListener('mousedown', function(e) { \n";
+ 	canvasState += " var mouse, mx, my, shapes, l, i, mySel; \n";
+ 	canvasState += " if (myState.expectResize !== -1) { \n";
+ 	canvasState += " myState.resizeDragging = true; \n";
+ 	canvasState += " return; \n } \n";
+ 	canvasState += " mouse = myState.getMouse(e); \n";
+ 	canvasState += " mx = mouse.x; \n";
+ 	canvasState += " my = mouse.y; \n";
+ 	canvasState += " shapes = myState.shapes; \n";
+ 	canvasState += " l = shapes.length; \n";
+ 	canvasState += " for (i = l-1; i >= 0; i -= 1) { \n";
+ 	canvasState += " if (shapes[i].contains(mx, my)) { \n";
+ 	canvasState += " mySel = shapes[i]; \n";
+ 	canvasState += " myState.dragoffx = mx - mySel.x; \n";
+ 	canvasState += " myState.dragoffy = my - mySel.y; \n";
+ 	canvasState += " myState.dragging = true; \n";
+ 	canvasState += " myState.selection = mySel; \n";
+ 	canvasState += " myState.valid = false; \n";
+ 	canvasState += " return; \n } \n } \n";
+ 	canvasState += " if (myState.selection) { \n";
+ 	canvasState += " myState.selection = null; \n";
+ 	canvasState += " myState.valid = false; \n";
+ 	canvasState += " } \n }, true); \n";
+ 	canvasState += " canvas.addEventListener('mousemove', function(e) { \n";
+ 	canvasState += " var mouse = myState.getMouse(e), mx = mouse.x, my = mouse.y, oldx, oldy, i, cur; \n";
+ 	canvasState += " if (myState.dragging){ \n";
+ 	canvasState += " mouse = myState.getMouse(e); \n";
+ 	canvasState += " myState.selection.x = mouse.x - myState.dragoffx; \n";
+ 	canvasState += " myState.selection.y = mouse.y - myState.dragoffy; \n";
+ 	canvasState += " myState.valid = false; \n";
+ 	canvasState += " } else if (myState.resizeDragging) { \n";
+ 	canvasState += " oldx = myState.selection.x; \n";
+ 	canvasState += " oldy = myState.selection.y; \n";
+ 	canvasState += " switch (myState.expectResize) { \n";
+ 	canvasState += " 	case 0: \n";
+ 	canvasState += " myState.selection.x = mx; \n";
+ 	canvasState += " myState.selection.y = my; \n";
+ 	canvasState += " myState.selection.w += oldx - mx; \n";
+ 	canvasState += " myState.selection.h += oldy - my; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 1: myState.selection.y = my;\n";
+ 	canvasState += " myState.selection.h += oldy - my;\n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 2: \n";
+ 	canvasState += " myState.selection.y = my; \n";
+ 	canvasState += " myState.selection.w = mx - oldx; \n";
+ 	canvasState += " myState.selection.h += oldy - my; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 3: \n";
+ 	canvasState += " myState.selection.x = mx; \n";
+ 	canvasState += " myState.selection.w += oldx - mx; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 4: \n";
+ 	canvasState += " myState.selection.w = mx - oldx; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 5: \n";
+ 	canvasState += " myState.selection.x = mx; \n";
+ 	canvasState += " myState.selection.w += oldx - mx; \n";
+ 	canvasState += " myState.selection.h = my - oldy; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 6: \n";
+ 	canvasState += " myState.selection.h = my - oldy; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 7: \n";
+ 	canvasState += " myState.selection.w = mx - oldx; \n";
+ 	canvasState += " myState.selection.h = my - oldy; \n";
+ 	canvasState += " break; \n } \n";
+ 	canvasState += " myState.valid = false; \n } \n";
+ 	canvasState += " if (myState.selection !== null && !myState.resizeDragging) { \n";
+ 	canvasState += " for (i = 0; i < 8; i += 1) { \n";
+ 	canvasState += " cur = myState.selectionHandles[i]; \n";
+ 	canvasState += " if (mx >= cur.x && mx <= cur.x + myState.selectionBoxSize && my >= cur.y && my <= cur.y + myState.selectionBoxSize) { \n";
+ 	canvasState += " myState.expectResize = i; \n";
+ 	canvasState += " myState.valid = false; \n";
+ 	canvasState += " switch (i) { \n";
+ 	canvasState += " case 0: \n";
+ 	canvasState += " this.style.cursor='nw-resize'; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 1: \n";
+ 	canvasState += " this.style.cursor='n-resize'; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 2: \n";
+ 	canvasState += " this.style.cursor='ne-resize'; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 3: \n";
+ 	canvasState += " this.style.cursor='w-resize'; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 4: \n";
+ 	canvasState += " this.style.cursor='e-resize'; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 5: \n";
+ 	canvasState += " this.style.cursor='sw-resize'; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 6: \n";
+	canvasState += " this.style.cursor='s-resize'; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " case 7: \n";
+ 	canvasState += " this.style.cursor='se-resize'; \n";
+ 	canvasState += " break; \n";
+ 	canvasState += " } \n";
+ 	canvasState += " return; \n";
+ 	canvasState += " } \n";
+ 	canvasState += " } \n";
+ 	canvasState += " myState.resizeDragging = false; \n";
+ 	canvasState += " myState.expectResize = -1;\n";
+ 	canvasState += " this.style.cursor = 'auto'; \n";
+ 	canvasState += " } \n";
+ 	canvasState += " }, true); \n";
+ 	canvasState += " canvas.addEventListener('mouseup', function(e) { \n";
+ 	canvasState += " myState.dragging = false; \n";
+ 	canvasState += " myState.resizeDragging = false; \n";
+ 	canvasState += " myState.expectResize = -1; \n";
+ 	canvasState += " if (myState.selection !== null) { \n";
+ 	canvasState += " if (myState.selection.w < 0) { \n";
+ 	canvasState += " myState.selection.w = -myState.selection.w; \n";
+ 	canvasState += " myState.selection.x -= myState.selection.w; \n";
+ 	canvasState += " } \n";
+ 	canvasState += " if (myState.selection.h < 0) { \n";
+ 	canvasState += " myState.selection.h = -myState.selection.h; \n";
+ 	canvasState += " myState.selection.y -= myState.selection.h; \n";
+ 	canvasState += " } \n";
+ 	canvasState += " } \n";
+ 	canvasState += " }, true); \n";
+ 	canvasState += " canvas.addEventListener('dblclick', function(e) { \n";
+ 	canvasState += " var mouse = myState.getMouse(e); \n";
+ 	canvasState += " myState.addShape(new Shape(myState, mouse.x - 10, mouse.y - 10, 20, 20, 'rgba(0,255,0,.6)','circle')); \n";
+ 	canvasState += " }, true); \n";
+ 	canvasState += " canvas.addEventListener('drop', function(e) { \n";
+ 	canvasState += " var mouse = myState.getMouse(e); \n";
+ 	canvasState += " if(e.dataTransfer.getData(\"type\") == \"circle\"){ \n";
+ 	canvasState += " myState.addShape(new Shape(myState, mouse.x - 10, mouse.y - 10, 40, 40, 'rgba(0,255,0,.6)','circle')); \n";
+ 	canvasState += " } \n";
+ 	canvasState += " else if(e.dataTransfer.getData(\"type\") == \"rectangle\"){ \n";
+ 	canvasState += " myState.addShape(new Shape(myState, mouse.x - 10, mouse.y - 10, 40, 40, 'rgba(0,255,0,.6)','rectangle')); \n";
+ 	canvasState += " } \n";
+ 	canvasState += " }, true);  \n";
+ 	canvasState += " this.selectionColor = '#CC0000'; \n";
+ 	canvasState += " this.selectionWidth = 2; \n";
+ 	canvasState += " this.selectionBoxSize = 6; \n";
+ 	canvasState += " this.selectionBoxColor = 'darkred'; \n";
+ 	canvasState += " this.interval = 30; \n";
+ 	canvasState += " setInterval(function() { myState.draw(); }, myState.interval); \n";
+ 	canvasState += " } \n";
+ 	
+ 	var canvasStateFunctions = " CanvasState.prototype.addShape = function(shape) { \n";
+ 	canvasStateFunctions += " \"use strict\"; \n";
+ 	canvasStateFunctions += " this.shapes.push(shape); \n";
+ 	canvasStateFunctions += " this.valid = false; \n";
+ 	canvasStateFunctions += " }; \n";
+ 	canvasStateFunctions += " CanvasState.prototype.clear = function() { \n";
+ 	canvasStateFunctions += " \"use strict\"; \n";
+ 	canvasStateFunctions += " this.ctx.clearRect(0, 0, this.width, this.height); \n";
+ 	canvasStateFunctions += " }; \n";
+ 	canvasStateFunctions += " CanvasState.prototype.draw = function() { \n";
+ 	canvasStateFunctions += " \"use strict\"; \n";
+ 	canvasStateFunctions += " var ctx, shapes, l, i, shape, mySel, radius; \n";
+ 	canvasStateFunctions += " if (!this.valid) { \n";
+ 	canvasStateFunctions += " ctx = this.ctx; \n";
+ 	canvasStateFunctions += " shapes = this.shapes; \n";
+ 	canvasStateFunctions += " this.clear(); \n";
+ 	canvasStateFunctions += " l = shapes.length; \n";
+ 	canvasStateFunctions += " for (i = 0; i < l; i += 1) { \n";
+ 	canvasStateFunctions += " shape = shapes[i]; \n";
+ 	canvasStateFunctions += " radius = shape.w/2; \n";
+ 	canvasStateFunctions += " if (shape.x  <= this.width && shape.y <= this.height && shape.x + shape.w >= 0 && shape.y + shape.h >= 0) { \n";
+ 	canvasStateFunctions += " shapes[i].draw(ctx); \n";
+ 	canvasStateFunctions += " } \n";
+ 	canvasStateFunctions += " } \n";
+ 	canvasStateFunctions += " this.valid = true; \n";
+ 	canvasStateFunctions += " } \n";
+ 	canvasStateFunctions += " }; \n";
+ 	canvasStateFunctions += " CanvasState.prototype.getMouse = function(e) { \n";
+ 	canvasStateFunctions += " \"use strict\"; \n";
+ 	canvasStateFunctions += " var element = this.canvas, offsetX = 0, offsetY = 0, mx, my; \n";
+ 	canvasStateFunctions += " if (element.offsetParent !== undefined) { \n";
+ 	canvasStateFunctions += " do { \n";
+ 	canvasStateFunctions += " offsetX += element.offsetLeft; \n";
+ 	canvasStateFunctions += " offsetY += element.offsetTop; \n";
+ 	canvasStateFunctions += " element = element.offsetParent; \n";
+ 	canvasStateFunctions += " } while (element); \n";
+ 	canvasStateFunctions += " } \n";
+ 	canvasStateFunctions += " offsetX += this.stylePaddingLeft + this.styleBorderLeft + this.htmlLeft;\n";
+ 	canvasStateFunctions += " offsetY += this.stylePaddingTop + this.styleBorderTop + this.htmlTop; \n";
+ 	canvasStateFunctions += " mx = e.pageX - offsetX; \n";
+ 	canvasStateFunctions += " my = e.pageY - offsetY; \n";
+ 	canvasStateFunctions += " return {x: mx, y: my}; \n";
+ 	canvasStateFunctions += " }; \n \n \n \n ";
+ 	
+ 	
+ 	
+ 	var paletteShape = " // This Constructor for Shape of Palette objects to hold data for all drawn drag objects to the canvas. \n"; 
+ 	paletteShape += " function ShapePalette(state, x, y, w, h, fill, type) { \n";
+ 	paletteShape += " \"use strict\"; \n";
+ 	paletteShape += " this.state = state; \n";
+ 	paletteShape += " this.x = x || 0; \n";
+ 	paletteShape += " this.y = y || 0; \n";
+ 	paletteShape += " this.w = w || 1; \n";
+ 	paletteShape += " this.h = h || 1; \n";
+ 	paletteShape += " this.fill = fill || '#AAAAAA'; \n";
+ 	paletteShape += " this.type = type || 'rectangle'; \n";
+ 	paletteShape += " } \n \n";
+ 	paletteShape += " // Draws this shape to a given context\n";
+ 	paletteShape += " ShapePalette.prototype.drawShape = function(ctx) { \n";
+ 	paletteShape += " \"use strict\"; \n";
+ 	paletteShape += " if(this.type == 'rectangle') \n";
+ 	paletteShape += " { \n";
+ 	paletteShape += " ctx.fillStyle = this.fill; \n";
+ 	paletteShape += " ctx.fillRect(this.x, this.y, this.w, this.h); \n";
+ 	paletteShape += " } \n";
+ 	paletteShape += " else if(this.type == 'circle') \n";
+ 	paletteShape += " { \n";
+ 	paletteShape += " ctx.beginPath(); \n";
+ 	paletteShape += " ctx.arc(this.x, this.y, 20, 0, 2 * Math.PI, false); \n";
+ 	paletteShape += " ctx.fillStyle = this.fill; \n";
+ 	paletteShape += " ctx.fill(); \n";
+ 	paletteShape += " } \n";
+ 	paletteShape += " }; \n \n \n ";
+ 	paletteShape += " \n";
+ 	
+ 	
+ 	var paletteStateCanvas = " function CanvasStatePalette(canvas) { \n";
+ 	paletteStateCanvas += " \"use strict\"; \n";
+ 	paletteStateCanvas += " this.canvas = canvas; \n";
+ 	paletteStateCanvas += " this.width = canvas.width; \n";
+ 	paletteStateCanvas += " this.height = canvas.height; \n";
+ 	paletteStateCanvas += " this.ctx = canvas.getContext('2d'); \n";
+ 	paletteStateCanvas += " this.valid = false; \n";
+ 	paletteStateCanvas += " this.shapesP = []; \n";
+ 	paletteStateCanvas += " var myPalette = this; \n";
+ 	paletteStateCanvas += " this.interval = 40; \n";
+ 	paletteStateCanvas += " setInterval(function() { myPalette.draw(); }, myPalette.interval); \n";
+ 	paletteStateCanvas += " } \n";
+ 	paletteStateCanvas += " CanvasStatePalette.prototype.addShapePalette = function(shapePalette) { \n";
+ 	paletteStateCanvas += " \"use strict\"; \n";
+ 	paletteStateCanvas += " this.shapesP.push(shapePalette); \n";
+ 	paletteStateCanvas += " this.valid = false; \n";
+ 	paletteStateCanvas += " }; \n";
+ 	paletteStateCanvas += " CanvasStatePalette.prototype.clear = function() { \n";
+ 	paletteStateCanvas += " \"use strict\"; \n";
+ 	paletteStateCanvas += " this.ctx.clearRect(0, 0, this.width, this.height); \n";
+ 	paletteStateCanvas += " }; \n";
+ 	paletteStateCanvas += " CanvasStatePalette.prototype.draw = function() { \n";
+ 	paletteStateCanvas += " \"use strict\"; \n";
+ 	paletteStateCanvas += " var ctx, shapes=[], l, i, shape, mySel; \n";
+ 	paletteStateCanvas += " if (!this.valid) { \n";
+ 	paletteStateCanvas += " ctx = this.ctx; \n";
+ 	paletteStateCanvas += " shapes = this.shapesP; \n";
+ 	paletteStateCanvas += " this.clear(); \n";
+ 	paletteStateCanvas += " // draw all shapes \n";
+ 	paletteStateCanvas += " l = shapes.length; \n";
+ 	paletteStateCanvas += " for (i = 0; i < l; i += 1) { \n";
+ 	paletteStateCanvas += " shapes[i].drawShape(ctx); \n";
+ 	paletteStateCanvas += " } \n";
+ 	paletteStateCanvas += " this.valid = true; \n";
+ 	paletteStateCanvas += " } \n";
+ 	paletteStateCanvas += " }; \n \n \n ";
+ 
+ 
+ 
+
+	return shape + shapeDraw + shapeDrawContains + canvasState + canvasStateFunctions + paletteShape + paletteStateCanvas;
+}
+</script>
+
+</body>
+</html>
